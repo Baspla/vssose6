@@ -1,9 +1,3 @@
-#
-# This is a simple Lookup server. Services can register themselves and clients can lookup the server address.
-# Each service is identified id chosen by the service itself. The service registers what ip and port it is listening on and what type of service it is.
-# The client can then lookup the service type and get all available services of a certain type.
-#
-
 import json
 import os
 import time

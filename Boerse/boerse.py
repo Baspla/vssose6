@@ -114,7 +114,7 @@ def lookup_keepalive(id, ip, port):
             log.error(f"Error: {e}")
         finally:
             conn.close()
-        time.sleep(KEEPALIVE_INTERVAL)
+        time.sleep(LOOKUP_KEEPALIVE_INTERVAL)
 
 # A dictionary to keep track of connected clients and their addresses
 connected_clients = {}
@@ -171,7 +171,14 @@ def change_prices():
         waitTime = random.uniform(5.0, 10.0)
         time.sleep(waitTime)
 
-KEEPALIVE_INTERVAL = 30
+def client_keepalive():
+    while True:
+        for address in connected_clients.keys():
+            send_message("KEEPALIVE", address)
+        time.sleep(CLIENT_KEEPALIVE_INTERVAL)
+
+LOOKUP_KEEPALIVE_INTERVAL = 30
+CLIENT_KEEPALIVE_INTERVAL = 15
 
 if __name__ == "__main__":
     log.info("Started boersen server")
@@ -213,6 +220,10 @@ if __name__ == "__main__":
     t2 = threading.Thread(target=change_prices)
     t2.start()
 
-    time.sleep(60) # wait before trying to re-register after startup
-    t3 = threading.Thread(target=lookup_keepalive, args=(id, LOCAL_IP, LOCAL_PORT))
+    t3 = threading.Thread(target=client_keepalive)
     t3.start()
+
+    time.sleep(60) # wait before trying to re-register after startup
+    t4 = threading.Thread(target=lookup_keepalive, args=(id, LOCAL_IP, LOCAL_PORT))
+    t4.start()
+

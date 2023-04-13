@@ -139,6 +139,10 @@ def listen_to_boerse(ip,port):
             stock,amount, value = message.split(";")[1:]
             value = float(value)
             process_stock_update(stock, value)
+        elif message == "KEEPALIVE":
+            log.debug("Received keepalive message from boersen server at {}:{}".format(ip,port))
+        else:
+            log.debug("Received unknown message from boersen server at {}:{}. Message: {}".format(ip,port,message))
 
 
 if __name__ == "__main__":

@@ -10,9 +10,7 @@ BUFFER_SIZE = 1024
 TIMEOUT = 30
 portfolio_value = 0
 
-# Load stocks and amounts from csv
-
-# Get stock data from csv
+# Get initial stock data from csv
 def read_csv_file(file_path):
     amount = {}
     value = {}

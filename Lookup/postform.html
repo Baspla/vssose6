@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Service Registration Form</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 1rem;
+        }
+
+        section {
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        main {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        aside {
+            width: 30vh;
+            background-color: #333;
+            color: #fff;
+            padding: 1rem;
+            position: relative;
+            transition: position 0.3s ease-in-out;
+        }
+
+        aside mark p {
+            background-color: #ff0000;
+            color: white;
+            padding: 0.5rem;
+        }
+
+        aside a {
+            display: block;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background-color: #4CAF50;
+            color: #fff;
+            text-decoration: none;
+            /* rounded */
+            border-radius: 6px;
+        }
+
+        aside a:hover {
+            background-color: #3e8e41;
+            text-decoration: none;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        a {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        form {
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+            padding: 20px;
+            width: 400px;
+            margin: 20px auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #3e8e41;
+        }
+
+        input[type="submit"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        textarea {
+            max-width: 100%;
+            min-height: 50px;
+            width: 100%;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Service Registration Form</h1>
+        <!-- Noscipt waring-->
+        <noscript>
+            <div style="background-color: #ff0000; color: white; padding: 0.5rem; text-align: center;">
+                <p>
+                    This page requires JavaScript to function properly.
+                    Please enable JavaScript in your browser.
+                </p>
+            </div>
+        </noscript>
+    </header>
+    <main>
+        <aside>
+            <!-- editable Text area for output-->
+            <h2>Output</h2>
+            <textarea id="output" rows="10" cols="50" readonly></textarea>
+            <h2>Instructions</h2>
+            <p>Use this form to register a service with the service registry.</p>
+            <p>Once registered, the service will be available for lookup by other services.</p>
+            <mark>
+                <p>NOTE: This form is for debugging purposes only.</p>
+                <p>
+                    Services should register themselves using the API.
+                </p>
+            </mark>
+            <a href="/services" target="_blank" rel="noreferrer noopener">View Registered Services</a>
+        </aside>
+        <section>
+            <form id="register-form">
+                <h2>Register Service</h2>
+                <label for="id">ID:</label>
+                <input type="text" id="id" name="id"><br>
+                <label for="ip">IP Address:</label>
+                <input type="text" id="ip" name="ip"><br>
+                <label for="port">Port:</label>
+                <input type="text" id="port" name="port"><br>
+                <label for="type">Type:</label>
+                <input type="text" id="type" name="type"><br>
+                <input type="submit" value="Register" disabled>
+            </form>
+            <form id="unregister-form">
+                <h2>Unregister Service</h2>
+                <label for="id">ID:</label>
+                <input type="text" id="id" name="id"><br>
+                <input type="submit" value="Unregister" disabled>
+            </form>
+            <form id="keepalive-form">
+                <h2>Send Keepalive Signal</h2>
+                <label for="id">ID:</label>
+                <input type="text" id="id" name="id"><br>
+                <input type="submit" value="Send Keepalive Signal" disabled>
+            </form>
+        </section>
+    </main>
+    <script>
+        console.log('JavaScript loaded');
+
+        document.querySelectorAll('input[type="submit"]').forEach(function (input) {
+            input.disabled = false;
+        });
+
+        // Submit registration form
+        document.querySelector('#register-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    console.log('Success');
+                    response.json().then(function (data) {
+                        document.querySelector('#output').value = JSON.stringify(data, null, 2);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+
+        // Submit unregistration form
+        document.querySelector('#unregister-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            fetch('/unregister', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    console.log('Success');
+                    response.json().then(function (data) {
+                        document.querySelector('#output').value = JSON.stringify(data, null, 2);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+
+        // Submit keepalive form
+        document.querySelector('#keepalive-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            fetch('/keepalive', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    console.log('Success');
+                    response.json().then(function (data) {
+                        document.querySelector('#output').value = JSON.stringify(data, null, 2);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+
+    </script>
+</body>

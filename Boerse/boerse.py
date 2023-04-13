@@ -168,7 +168,7 @@ def change_prices():
             broadcast_message("CHANGE;"+stock[wId] + ";"+str(amount)+";" + str(value[wId]))
 
         # Wait for a random amount of time before generating the next price change
-        waitTime = random.uniform(5.0, 10.0)
+        waitTime = random.uniform(5.0, 60.0)
         time.sleep(waitTime)
 
 def client_keepalive():

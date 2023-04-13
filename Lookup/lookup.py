@@ -3,6 +3,18 @@ import os
 import time
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import logging as log
+
+# Configure logging
+LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
+log.basicConfig(
+    level=LOGLEVEL,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        log.FileHandler('debug.log'),
+        log.StreamHandler()
+    ]
+)
 
 services = {}
 
@@ -32,19 +44,23 @@ class RequestHandler(BaseHTTPRequestHandler):
         data = json.loads(body)
         return data
 
+    def log_message(self, format, *args):
+        log.debug("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), format%args))
+        return
+
     def do_GET(self):
         if self.path == '/':
 
             self.ok_headers()
             # Serve json with all endpoints
-            message = { "ok": True, "endpoints": {"POST": ["/register","/keepalive", "/unregister"], "GET": ["/services", "/services?type=<type>", "/service/<id>"] }}
+            message = { "ok": True, "endpoints": {"POST": ["/register", "/unregister"], "GET": ["/services", "/services?type=<type>", "/service/<id>"] }}
             self.respond_with_json(message)
         
         elif self.path == '/debug':
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            with open('Lookup/postform.html', 'r') as f:
+            with open('postform.html', 'r') as f:
                 self.wfile.write(f.read().encode())
 
         elif self.path.startswith('/services?type='):
@@ -117,21 +133,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                 message = { "ok": False,"method":"register", "error": "Missing data" }
             self.respond_with_json(message)
 
-        elif self.path == '/keepalive':
-
-            self.ok_headers()
-            # Keep service alive
-            data = self.load_json_data()
-            if 'id' in data:
-                if data['id'] in services:
-                    services[data['id']]['last_seen'] = current_time()
-                    message = { "ok": True, "method":"keepalive" }
-                else:
-                    message = { "ok": False, "method":"keepalive", "error": "Service not found" }
-            else:
-                message = { "ok": False, "method":"keepalive", "error": "Missing data" }
-            self.respond_with_json(message)
-
         elif self.path == '/unregister':
 
             self.ok_headers()
@@ -155,16 +156,26 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 def clean_up():
     while True:
-        time.sleep(60)
+        time.sleep(CLEANUP_INTERVAL)
+        log.info("Cleaning up services")
+        to_delete = []
         for key, value in services.items():
-            if current_time() - value['last_seen'] > 300000:
+            if current_time() - value['last_seen'] > (CLEANUP_TTL*1000):
+                to_delete.append(key)
+        for key in to_delete:
+            log.info("Removing service {}".format(key))
+            try:
                 del services[key]
+            except:
+                pass
+
+CLEANUP_INTERVAL = 30
+CLEANUP_TTL = 90
 
 if __name__ == "__main__":
+    # Clean up services that have not been seen for a while
+    t1 = threading.Thread(target=clean_up).start()
     port = int(os.environ.get("PORT", 12340))
     server = HTTPServer(('', port), RequestHandler)
-    print("Started server on port {}".format(port))
+    log.info("Started lookup server on port {}".format(port))
     server.serve_forever()
-
-    # Clean up services that have not been seen for 5 minutes
-    t1 = threading.Thread(target=clean_up)

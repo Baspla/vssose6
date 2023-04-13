@@ -29,7 +29,7 @@
         }
 
         aside {
-            width: 30vh;
+            width: 20vw;
             background-color: #333;
             color: #fff;
             padding: 1rem;
@@ -43,7 +43,7 @@
             padding: 0.5rem;
         }
 
-        aside a {
+        aside btn {
             display: block;
             margin-top: 1rem;
             padding: 0.5rem;
@@ -54,7 +54,7 @@
             border-radius: 6px;
         }
 
-        aside a:hover {
+        aside btn:hover {
             background-color: #3e8e41;
             text-decoration: none;
         }
@@ -161,7 +161,7 @@
                     Services should register themselves using the API.
                 </p>
             </mark>
-            <a href="/services" target="_blank" rel="noreferrer noopener">View Registered Services</a>
+            <btn id="services-btn">View Registered Services</a>
         </aside>
         <section>
             <form id="register-form">
@@ -181,12 +181,6 @@
                 <label for="id">ID:</label>
                 <input type="text" id="id" name="id"><br>
                 <input type="submit" value="Unregister" disabled>
-            </form>
-            <form id="keepalive-form">
-                <h2>Send Keepalive Signal</h2>
-                <label for="id">ID:</label>
-                <input type="text" id="id" name="id"><br>
-                <input type="submit" value="Send Keepalive Signal" disabled>
             </form>
         </section>
     </main>
@@ -249,21 +243,9 @@
                 });
         });
 
-        // Submit keepalive form
-        document.querySelector('#keepalive-form').addEventListener('submit', function (e) {
+        document.querySelector('#services-btn').addEventListener('click', function (e) {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = {};
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
-            }
-            fetch('/keepalive', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
+            fetch('/services')
                 .then(response => {
                     console.log('Success');
                     response.json().then(function (data) {

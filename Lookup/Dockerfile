@@ -9,4 +9,4 @@ WORKDIR /app
 
 COPY . .
 
-CMD ["python3", "./bank.py"]
+CMD ["python3", "./lookup.py"]

@@ -149,6 +149,11 @@ def listen_for_datagrams():
         if message == b'all':
             log.debug("Sending all prices to {}".format(address))
             send_all_prices(address)
+        elif message.startswith(b'KEEPALIVE;'):
+            log.debug("Received keepalive response from {}".format(address))#
+            timestamp = message.split(b';')[1]
+            rtt[address] = time.time() - float(timestamp)
+            log.debug("Round trip time of {} is: {}".format(address, rtt[address]))
         else:
             log.debug("Received message from {}: {}".format(address, message))
 
@@ -171,10 +176,14 @@ def change_prices():
         waitTime = random.uniform(10.0, 60.0)
         time.sleep(waitTime)
 
+def current_time():
+    # Give the time in seconds since the epoch
+    return str(int(time.time()))
+
 def client_keepalive():
     while True:
         for address in connected_clients.keys():
-            send_message("KEEPALIVE", address)
+            send_message("KEEPALIVE;"+current_time(), address)
         time.sleep(CLIENT_KEEPALIVE_INTERVAL)
 
 LOOKUP_KEEPALIVE_INTERVAL = 30
@@ -191,6 +200,8 @@ if __name__ == "__main__":
 
     file_path = 'vs_p1_stocks.csv'
     stock, value = load_stocks(file_path)
+
+    rtt = {}
 
     log.info("Loaded {} stocks".format(len(stock)))
 

@@ -139,8 +139,10 @@ def listen_to_boerse(ip,port):
             stock,amount, value = message.split(";")[1:]
             value = float(value)
             process_stock_update(stock, value)
-        elif message == "KEEPALIVE":
+        elif message.startswith("KEEPALIVE;"):
             log.debug("Received keepalive message from boersen server at {}:{}".format(ip,port))
+            # Send keepalive message back to boersen server. This is needed to measure the round trip time
+            send_message(UDPClientSocket,message, (ip,port))
         else:
             log.debug("Received unknown message from boersen server at {}:{}. Message: {}".format(ip,port,message))
 

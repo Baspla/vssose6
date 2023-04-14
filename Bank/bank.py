@@ -147,6 +147,16 @@ def listen_to_boerse(ip,port):
             log.debug("Received unknown message from boersen server at {}:{}. Message: {}".format(ip,port,message))
 
 
+def print_prices():
+    while True:
+        time.sleep(PRINT_PRICES_INTERVAL)
+        log.info("Portfolio value: {}".format(portfolio_value))
+        log.info("##################\nCurrent prices\n##################")
+        for stock in value:
+            log.info("{}: {}".format(stock, value[stock]))
+
+PRINT_PRICES_INTERVAL = 45
+
 if __name__ == "__main__":
     log.info("Starting bank server")
 
@@ -178,4 +188,6 @@ if __name__ == "__main__":
         ip = boersen_server["ip"]
         port = boersen_server["port"]
         threading.Thread(target=listen_to_boerse, args=(ip,port)).start()
+        threading.Thread(target=print_prices).start()
+
 

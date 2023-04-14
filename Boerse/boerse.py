@@ -8,6 +8,8 @@ import uuid
 import http.client
 import json
 import logging as log
+import math
+import statistics
 
 # Configure logging
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
@@ -97,6 +99,7 @@ def lookup_keepalive(id, ip, port):
     }
 
     while True:
+        time.sleep(LOOKUP_KEEPALIVE_INTERVAL)
         try:
             conn = http.client.HTTPConnection(LOOKUP_IP, LOOKUP_PORT)
             conn.request("POST", "/register", payload, headers)
@@ -114,7 +117,6 @@ def lookup_keepalive(id, ip, port):
             log.error(f"Error: {e}")
         finally:
             conn.close()
-        time.sleep(LOOKUP_KEEPALIVE_INTERVAL)
 
 # A dictionary to keep track of connected clients and their addresses
 connected_clients = {}
@@ -135,6 +137,8 @@ def broadcast_message(message):
 # A function that listens for incoming datagrams and sends price changes to connected clients
 def listen_for_datagrams():
     # Receive datagram and get the client's address
+    last_rtt_index = 0
+    last_rtts = [0] * RTT_MEASUREMENT_COUNT
     while True:
         bytes_address_pair = UDPServerSocket.recvfrom(BUFFER_SIZE)
         message = bytes_address_pair[0]
@@ -152,8 +156,19 @@ def listen_for_datagrams():
         elif message.startswith(b'KEEPALIVE;'):
             log.debug("Received keepalive response from {}".format(address))#
             timestamp = message.split(b';')[1]
-            rtt[address] = time.time() - float(timestamp)
-            log.debug("Round trip time of {} is: {}".format(address, rtt[address]))
+            rtt[address] = (time.time() - float(timestamp)) * 1000
+            last_rtts[last_rtt_index] = rtt[address]
+            last_rtt_index = (last_rtt_index + 1) % len(last_rtts)
+            if last_rtt_index == 0:
+                log.debug("Average round trip time: {}".format(sum(last_rtts) / len(last_rtts)))
+                min_rtt = min(last_rtts)
+                max_rtt = max(last_rtts)
+                log.debug("Min round trip time: {} ms".format(min_rtt))
+                log.debug("Max round trip time: {} ms".format(max_rtt))
+                log.debug("Standard deviation: {}".format(math.sqrt(sum((x - min_rtt) ** 2 for x in last_rtts) / len(last_rtts))))
+                log.debug("Median: {} ms".format(statistics.median(last_rtts)))
+
+            log.debug("Round trip time of {} is: {} ms (#{})".format(address, rtt[address], last_rtt_index))
         else:
             log.debug("Received message from {}: {}".format(address, message))
 
@@ -165,20 +180,19 @@ def change_prices():
     while True:
         # Generate a random price change and apply it to a random stock
         wId = random.randint(0, len(stock) - 1)
-        priceChange = random.randint(-10, 10)
-        amount = random.randint(1, 100)
+        priceChange = random.randint(MIN_PRICE_CHANGE, MAX_PRICE_CHANGE)
+        amount = random.randint(MIN_TRADE_AMOUNT, MAX_TRADE_AMOUNT)
         if priceChange != 0:
             value[wId] = float(value[wId]) + priceChange
             log.info("Traded {} of {} for {} (value change: {})".format(amount, stock[wId], value[wId], priceChange))
             broadcast_message("CHANGE;"+stock[wId] + ";"+str(amount)+";" + str(value[wId]))
 
         # Wait for a random amount of time before generating the next price change
-        waitTime = random.uniform(10.0, 60.0)
+        waitTime = random.uniform(MIN_PRICE_CHANGE_INTERVAL, MAX_PRICE_CHANGE_INTERVAL)
         time.sleep(waitTime)
 
 def current_time():
-    # Give the time in seconds since the epoch
-    return str(int(time.time()))
+    return str(time.time())
 
 def client_keepalive():
     while True:
@@ -186,8 +200,23 @@ def client_keepalive():
             send_message("KEEPALIVE;"+current_time(), address)
         time.sleep(CLIENT_KEEPALIVE_INTERVAL)
 
+def print_prices():
+    while True:
+        time.sleep(PRINT_PRICES_INTERVAL)
+        log.info("##################\nCurrent prices\n##################")
+        for i in range(len(value)):
+            log.info("Stock: {} Value: {}".format(stock[i], value[i]))
+
 LOOKUP_KEEPALIVE_INTERVAL = 30
 CLIENT_KEEPALIVE_INTERVAL = 15
+RTT_MEASUREMENT_COUNT = 100
+MIN_PRICE_CHANGE = -10
+MAX_PRICE_CHANGE = 10
+MIN_TRADE_AMOUNT = 1
+MAX_TRADE_AMOUNT = 100
+MIN_PRICE_CHANGE_INTERVAL = 25.0
+MAX_PRICE_CHANGE_INTERVAL = 60.0
+PRINT_PRICES_INTERVAL = 45
 
 if __name__ == "__main__":
     log.info("Started boersen server")
@@ -234,7 +263,9 @@ if __name__ == "__main__":
     t3 = threading.Thread(target=client_keepalive)
     t3.start()
 
-    time.sleep(60) # wait before trying to re-register after startup
     t4 = threading.Thread(target=lookup_keepalive, args=(id, LOCAL_IP, LOCAL_PORT))
     t4.start()
 
+    # Print the current prices of the stocks after the server has been running for 5 minutes
+    t5 = threading.Thread(target=print_prices)
+    t5.start()

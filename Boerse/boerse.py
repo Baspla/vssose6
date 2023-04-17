@@ -11,7 +11,9 @@ import logging as log
 import math
 import statistics
 
-# Configure logging
+#
+# Set up logging
+#
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 log.basicConfig(
     level=LOGLEVEL,
@@ -22,6 +24,9 @@ log.basicConfig(
     ]
 )
 
+#
+# Loads the initail stock values from the csv file
+#
 def load_stocks(file_path):
     stock = []
     value = []
@@ -32,6 +37,10 @@ def load_stocks(file_path):
             value.append(float(row['value']))
     return stock, value
 
+#
+# Registers the boerse with the lookup service
+# This is done so that the bank can find the boerses
+#
 def register_lookup(ip,port):
     id = str(uuid.uuid4())
     data = {
@@ -80,6 +89,10 @@ def register_lookup(ip,port):
             time.sleep(backoff)    
     return id
 
+#
+# This method is periodically called to send keepalive messages to the lookup service
+# This is done so that the lookup service knows that the boerse is still running
+#
 def lookup_keepalive(id, ip, port):
     data = {
         "id": id,
@@ -118,23 +131,32 @@ def lookup_keepalive(id, ip, port):
         finally:
             conn.close()
 
-# A dictionary to keep track of connected clients and their addresses
-connected_clients = {}
-
+#
+# This method sends all current stock prices to the bank
+#
 def send_all_prices(address):
     for i in range(len(stock)):
         send_message("ALL;"+stock[i] + ";0;" + str(value[i]), address)
 
+#
+# This method is used to send a message to a client
+#
 def send_message(message, address):
     bytesToSend = str.encode(message)
     UDPServerSocket.sendto(bytesToSend, address)
 
+#
+# This method is used to send a message to all connected clients
+#
 def broadcast_message(message):
     for address in connected_clients.keys():
         send_message(message, address)
 
-
-# A function that listens for incoming datagrams and sends price changes to connected clients
+#
+# This method listens for incoming datagrams and sends price changes to connected clients
+# It also handles keepalive messages from the bank, which also are used to measure the round trip time 
+# All this runs in a separate thread
+#
 def listen_for_datagrams():
     # Receive datagram and get the client's address
     last_rtt_index = 0
@@ -175,7 +197,10 @@ def listen_for_datagrams():
     # Close the socket when the thread is finished
     UDPServerSocket.close()
 
-# A function that randomly changes the prices of the stocks
+#
+# This method is used to generate random price changes for the stocks
+# It runs in a separate thread
+#
 def change_prices():
     while True:
         # Generate a random price change and apply it to a random stock
@@ -191,15 +216,27 @@ def change_prices():
         waitTime = random.uniform(MIN_PRICE_CHANGE_INTERVAL, MAX_PRICE_CHANGE_INTERVAL)
         time.sleep(waitTime)
 
+#
+# This is a helper method to get the current time
+#
 def current_time():
     return str(time.time())
 
+#
+# This method is used to periodically send keepalive messages to all connected clients
+# It runs in a separate thread
+#
 def client_keepalive():
     while True:
         for address in connected_clients.keys():
             send_message("KEEPALIVE;"+current_time(), address)
         time.sleep(CLIENT_KEEPALIVE_INTERVAL)
 
+#
+# This method is used to print the current stock prices
+# This is used for validation purposes
+# It runs in a separate thread
+#
 def print_prices():
     while True:
         time.sleep(PRINT_PRICES_INTERVAL)
@@ -207,6 +244,12 @@ def print_prices():
         for i in range(len(value)):
             log.info("Stock: {} Value: {}".format(stock[i], value[i]))
 
+# A dictionary to keep track of connected clients and their addresses
+connected_clients = {}
+
+#
+# Constants
+#
 LOOKUP_KEEPALIVE_INTERVAL = 30
 CLIENT_KEEPALIVE_INTERVAL = 15
 RTT_MEASUREMENT_COUNT = 100
@@ -260,9 +303,11 @@ if __name__ == "__main__":
     t2 = threading.Thread(target=change_prices)
     t2.start()
 
+    # Start the thread that sends keepalive messages to the clients
     t3 = threading.Thread(target=client_keepalive)
     t3.start()
 
+    # Start the thread that sends keepalive messages to the lookup service
     t4 = threading.Thread(target=lookup_keepalive, args=(id, LOCAL_IP, LOCAL_PORT))
     t4.start()
 

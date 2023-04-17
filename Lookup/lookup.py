@@ -5,7 +5,9 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging as log
 
-# Configure logging
+#
+# Set up logging
+#
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 log.basicConfig(
     level=LOGLEVEL,
@@ -16,13 +18,15 @@ log.basicConfig(
     ]
 )
 
-services = {}
-
+# Helper function to get current time in milliseconds
 def current_time():
     return int(round(time.time() * 1000))
 
 class RequestHandler(BaseHTTPRequestHandler):    
 
+    #
+    # Helper functions
+    #
     def ok_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -44,10 +48,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         data = json.loads(body)
         return data
 
+    #
+    # This overrides the default logging function, so that we can control the log level
+    #
     def log_message(self, format, *args):
         log.debug("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), format%args))
         return
 
+    #
+    # Handle GET requests
+    #
     def do_GET(self):
         if self.path == '/':
 
@@ -56,6 +66,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             message = { "ok": True, "endpoints": {"POST": ["/register", "/unregister"], "GET": ["/services", "/services?type=<type>", "/service/<id>"] }}
             self.respond_with_json(message)
         
+        # Serve a simple form for debugging
         elif self.path == '/debug':
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
@@ -63,8 +74,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             with open('postform.html', 'r') as f:
                 self.wfile.write(f.read().encode())
 
+        # Return a json list of all services filtered by type
         elif self.path.startswith('/services?type='):
-
             self.ok_headers()
             # Lookup service by type
             service_type = self.path.split('=')[1]
@@ -76,6 +87,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             message = { "ok": True, "services": filtered_services }
             self.respond_with_json(message)
 
+        # Return a json list of all services
         elif self.path.startswith('/services'):
 
             self.ok_headers()
@@ -83,6 +95,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             message = { "ok": True, "services": services }
             self.respond_with_json(message)
 
+        # Return a json object of a single service
         elif self.path.startswith('/service/'):
 
             self.ok_headers()
@@ -94,6 +107,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 message = { "ok": False, "error": "Service not found" }
             self.respond_with_json(message)
 
+        # Return an error because no service id was provided
         elif self.path == '/service':
                 
                 self.error_headers(400)
@@ -101,8 +115,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 message = { "ok": False, "error": "Missing service id" }
                 self.respond_with_json(message)
 
+        # This is the default case for all other paths
         else:
-
             # Send 404 in json format
             self.error_headers(404)
             message = { "ok": False, "error": "Not found" }
@@ -110,6 +124,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         return
     
+    #
+    # Handle POST requests
+    #
     def do_POST(self):
         if self.path == '/register':
 
@@ -154,6 +171,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         return
 
+#
+# Periodically clean up services that have not been seen for a while
+#
 def clean_up():
     while True:
         time.sleep(CLEANUP_INTERVAL)
@@ -169,9 +189,17 @@ def clean_up():
             except:
                 pass
 
+services = {}
+
+#
+# Constants
+#
 CLEANUP_INTERVAL = 30
 CLEANUP_TTL = 90
 
+#
+# Main
+#
 if __name__ == "__main__":
     # Clean up services that have not been seen for a while
     t1 = threading.Thread(target=clean_up).start()

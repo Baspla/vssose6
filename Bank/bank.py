@@ -7,7 +7,9 @@ import logging as log
 import http.client
 import json
 
-# Configure logging
+#
+# Set up logging
+#
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 log.basicConfig(
     level=LOGLEVEL,
@@ -18,9 +20,27 @@ log.basicConfig(
     ]
 )
 
+#
+# UDP Methods
+#
 def send_message(clientsocket,message, address):
     bytesToSend = str.encode(message)
     clientsocket.sendto(bytesToSend, address)
+
+#
+# Process Börsen Changes
+#
+def process_stock_change(stock, amount, value):
+    log.debug("Processing stock change for {} with amount {} and value {}".format(stock, amount, value))
+    update_stock_value(stock, value)
+    update_portfolio_value()
+
+# This function is called when a total stock update is received
+# The difference to process_stock_change is that this function does not update the portfolio value
+# This happens if the bank receives a stock update from the boerse server that is prefixed with "ALL"
+def process_stock_update(stock, value):
+    log.debug("Processing stock update for {} with value {}".format(stock, value))
+    update_stock_value(stock, value)
 
 def update_stock_value(stock, updated_value):
     log.debug("Updating stock value for {}".format(stock))
@@ -41,17 +61,13 @@ def update_portfolio_value():
     portfolio_value = round(updated_portfolio_value, 2)
     log.info("New Portfolio value: {}".format(portfolio_value))
 
-def process_stock_change(stock, amount, value):
-    log.debug("Processing stock change for {} with amount {} and value {}".format(stock, amount, value))
-    update_stock_value(stock, value)
-    update_portfolio_value()
-
-# This function is called when a total stock update is received
-# The difference to process_stock_change is that this function does not update the portfolio value
-def process_stock_update(stock, value):
-    log.debug("Processing stock update for {} with value {}".format(stock, value))
-    update_stock_value(stock, value)
-
+#
+# Load Börsen Server from Lookup Server
+# 
+# This function is called when the bank starts up
+# It tries to find a boerse server in the lookup server
+# If it fails, it retries with exponential backoff
+#
 def load_boersen_server_from_lookup_server():
     
     LOOKUP_HOST = os.environ.get("LOOKUP_HOST", "lookup")
@@ -96,7 +112,9 @@ def load_boersen_server_from_lookup_server():
             time.sleep(backoff)
     return boersen
 
-
+#
+# Connect to Börsen Server and listen for changes
+#
 def listen_to_boerse(ip,port):
     # Create a UDP socket at client side
     UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -146,7 +164,11 @@ def listen_to_boerse(ip,port):
         else:
             log.debug("Received unknown message from boersen server at {}:{}. Message: {}".format(ip,port,message))
 
-
+#
+# Prints out the current values for all stocks
+# This function is called every PRINT_PRICES_INTERVAL seconds
+# This is done for validation purposes
+#
 def print_prices():
     while True:
         time.sleep(PRINT_PRICES_INTERVAL)
@@ -155,13 +177,21 @@ def print_prices():
         for stock in value:
             log.info("{}: {}".format(stock, value[stock]))
 
-PRINT_PRICES_INTERVAL = 45
 
+#
+# Constants
+#
+PRINT_PRICES_INTERVAL = 45
+TIMEOUT = 30
+BUFFER_SIZE = 1024
+
+
+#
+# Main
+#
 if __name__ == "__main__":
     log.info("Starting bank server")
 
-    BUFFER_SIZE = 1024
-    TIMEOUT = 30
     portfolio_value = 0
 
     # Get initial stock data from csv
@@ -177,7 +207,6 @@ if __name__ == "__main__":
 
     file_path = 'stocks_amounts.csv'
     amount,value = read_csv_file(file_path)
-
 
     log.info("Loaded {} stocks and amounts".format(len(amount)))
 

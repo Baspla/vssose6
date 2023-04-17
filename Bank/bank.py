@@ -3,6 +3,7 @@ import time
 import threading
 import csv
 import logging as log
+from Bank.user_interface import start_server
 from bank_constants import *
 
 from connect_to_boerse import listen_to_boerse
@@ -104,5 +105,4 @@ if __name__ == "__main__":
         bank = Bank(amount, value)
         threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()
         threading.Thread(target=bank.print_prices).start()
-
-
+        threading.Thread(target=start_server).start()

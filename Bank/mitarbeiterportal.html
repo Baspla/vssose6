@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <title>Mitarbeiterportal</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        header {
+            background-color: #000000;
+            color: white;
+            padding: 0.5rem;
+        }
+
+        main {
+            padding: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        aside {
+            padding: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 100%;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Mitarbeiterportal</h1>
+        <!-- Noscipt waring-->
+        <noscript>
+            <div style="background-color: #ff0000; color: white; padding: 0.5rem; text-align: center;">
+                <p>
+                    This page requires JavaScript to function properly.
+                    Please enable JavaScript in your browser.
+                </p>
+            </div>
+        </noscript>
+    </header>
+    <main>
+        <content>
+            <h2>Wertpapierhandel</h2>
+            <input id="input-name" type="text" value="WKN">
+            <input id="input-amount" step="1" type="number" value="Anzahl">
+            <button id="button-buy" type="button">Wertpapier kaufen</button>
+            <button id="button-sell" type="button">Wertpapier verkaufen</button>
+
+            <h2>Gelder der Bank</h2>
+            <p>Portfoliowert: <span id="txt-portfolio"></span></p>
+            <p>Bargeldbestand: <span id="txt-cash"></span></p>
+            <p>Gesamtwert: <span id="txt-total"></span></p>
+            <button id="update" type="button">Aktualisieren</button>
+        </content>
+        <aside>
+            <h2>Aktien Bestand</h2>
+            <textarea id="output" rows="10" cols="50" readonly></textarea>
+        </aside>
+        <script>
+            console.log('JavaScript loaded');
+
+            function sendPostRequest(url, data) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', url, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send(JSON.stringify(data));
+                xhr.onload = function () {
+                    alert(xhr.responseText);
+                };
+            }
+
+            function sendGetRequest(url, callback) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onload = function () {
+                    console.log(xhr.responseText);
+                    json = JSON.parse(xhr.responseText);
+                    console.log(json);
+                    callback(json);
+                };
+                xhr.send();
+            }
+
+            function updateValues() {
+                sendGetRequest('/api/totalFunds', function (data) {
+                    document.querySelector('#txt-cash').textContent = data.totalFunds;
+                });
+                sendGetRequest('/api/totalPortfolio', function (data) {
+                    document.querySelector('#txt-portfolio').textContent = data.totalPortfolio;
+                });
+                sendGetRequest('/api/totalValue', function (data) {
+                    document.querySelector('#txt-total').textContent = data.totalValue;
+                });
+                sendGetRequest('/api/stockList', function (data) {
+                    document.querySelector('#output').textContent = JSON.stringify(data, null, 2);
+                });
+            }
+
+            document.querySelector('#update').addEventListener('click', updateValues);
+
+            document.querySelector("#button-buy").addEventListener('click', function () {
+                sendPostRequest('/api/buyStock', {
+                    name: document.querySelector('#input-name').value,
+                    amount: document.querySelector('#input-amount').value
+                });
+            })
+
+            document.querySelector("#button-sell").addEventListener('click', function () {
+                sendPostRequest('/api/sellStock', {
+                    name: document.querySelector('#input-name').value,
+                    amount: document.querySelector('#input-amount').value
+                });
+            })
+
+            document.onload = updateValues();
+        </script>
+    </main>
+</body>
+
+</html>

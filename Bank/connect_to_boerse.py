@@ -71,6 +71,9 @@ def listen_to_boerse(bank,ip,port):
             stock,amount, value = message.split(";")[1:]
             value = float(value)
             bank.process_stock_update(stock, value)
+        elif message.startswith("ALLEND;"):
+            log.debug("Received end of stock update message from boersen server at {}:{}".format(ip,port))
+            bank.update_portfolio_value()
         elif message.startswith("KEEPALIVE;"):
             log.debug("Received keepalive message from boersen server at {}:{}".format(ip,port))
             # Send keepalive message back to boersen server. This is needed to measure the round trip time

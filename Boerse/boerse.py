@@ -139,6 +139,7 @@ def lookup_keepalive(id, ip, port):
 def send_all_prices(address):
     for i in range(len(stock)):
         send_message("ALL;"+stock[i] + ";0;" + str(value[i]), address)
+    send_message("ALLEND;", address)
 
 #
 # This method is used to send a message to a client

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <title>Kundenportal</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        header {
+            background-color: #000000;
+            color: white;
+            padding: 0.5rem;
+        }
+
+        main {
+            padding: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        aside {
+            padding: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 100%;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kundenportal</h1>
+    <h2>Ein-/Auszahlung</h2>
+    <input id="input-betrag" step="0.01" type="number">
+    <button id="button-einzahlung" type="button">Geld einzahlen</button>
+    <button id="button-auszahlung" type="button">Geld auszahlen</button>
+
+    <h2>Kredit</h2>
+    <input id="input-kredit-betrag" step="0.01" type="number">
+    <button id="button-kredit-aufnehmen" type="button">Kredit aufnehmen</button>
+    <button id="button-kredit-zahlen" type="button">Kredit zurückzahlen</button>
+    
+    <script>
+        console.log('JavaScript loaded');
+        
+        function sendPostRequest(url, data) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(data));
+        }
+
+        document.querySelector('#button-einzahlung').addEventListener('click', function() {
+            var betrag = document.querySelector('#input-betrag').value;
+            if (betrag == '') {
+                alert('Betrag muss angegeben werden');
+                return;
+            }
+            if (betrag < 0) {
+                alert('Betrag muss größer als 0 sein');
+                return;
+            }
+            console.log('Einzahlung ' + betrag + ' Euro');
+            sendPostRequest('/api/deposit', {amount: betrag});
+        });
+        
+        document.querySelector('#button-auszahlung').addEventListener('click', function() {
+            var betrag = document.querySelector('#input-betrag').value;
+            if (betrag == '') {
+                alert('Betrag muss angegeben werden');
+                return;
+            }
+            if (betrag < 0) {
+                alert('Betrag muss größer als 0 sein');
+                return;
+            }
+            console.log('Auszahlung ' + betrag + ' Euro');
+            sendPostRequest('/api/withdraw', {amount: betrag});
+        });
+
+        document.querySelector('#button-kredit-aufnehmen').addEventListener('click', function() {
+            var betrag = document.querySelector('#input-kredit-betrag').value;
+            if (betrag == '') {
+                alert('Betrag muss angegeben werden');
+                return;
+            }
+            if (betrag < 0) {
+                alert('Betrag muss größer als 0 sein');
+                return;
+            }
+            console.log('Kredit von ' + betrag + ' Euro aufgenommen');
+            sendPostRequest('/api/getLoan', {amount: betrag});
+        });
+
+        document.querySelector('#button-kredit-zahlen').addEventListener('click', function() {
+            var betrag = document.querySelector('#input-kredit-betrag').value;
+            if (betrag == '') {
+                alert('Betrag muss angegeben werden');
+                return;
+            }
+            if (betrag < 0) {
+                alert('Betrag muss größer als 0 sein');
+                return;
+            }
+            console.log('Kredit von ' + betrag + ' Euro zurückgezahlt');
+            sendPostRequest('/api/repayLoan', {amount: betrag});
+        });
+    </script>
+</body>
+</html>

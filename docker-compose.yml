@@ -16,7 +16,7 @@ services:
       - PORT=12345
       - LOOKUP_HOST=lookup
       - LOOKUP_PORT=22000
-      - LOGLEVEL=DEBUG
+      - LOGLEVEL=INFO
     build: ./Boerse/
     depends_on:
       - lookup
@@ -25,8 +25,12 @@ services:
     environment:
       - LOOKUP_HOST=lookup
       - LOOKUP_PORT=22000
-      - LOGLEVEL=INFO
+      - LOGLEVEL=DEBUG
+      - PORT=22100
     build: ./Bank/
+    ports:
+      - 22100:22100
+      # use - 22100 for random port (this can be used to run multiple instances)
     depends_on:
       - lookup
       - boerse

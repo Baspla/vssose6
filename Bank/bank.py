@@ -3,7 +3,7 @@ import time
 import threading
 import csv
 import logging as log
-from Bank.user_interface import start_server
+from user_interface import start_server
 from bank_constants import *
 
 from connect_to_boerse import listen_to_boerse

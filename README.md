@@ -16,7 +16,7 @@ P1:
 - see UDP communication in terminal
 
 P2:
-- click of port of one bank
+- click on port of one bank in Docker Desktop Container
 - add /kundenportal or /mitarbeiterportal to the url -> should look e.g. so: *http://localhost:51349/kundenportal*
 - have fun while playing with our kunden-/mitarbeiterportal
 

@@ -7,3 +7,4 @@ BUFFER_SIZE = 1024
 FILE_PATH = 'stocks_amounts.csv'
 START_FUNDS = 100000
 START_LOANS = 0
+PRINT_PRICES = False

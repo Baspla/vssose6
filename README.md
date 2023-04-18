@@ -5,8 +5,8 @@
 Generell:
 - open Docker Desktop
 - open terminal
-  - cd to repo folder
-  - docker-compose up --build --scale boerse=1 --scale bank=4
+ 	- cd to repo folder
+ 	- docker-compose up --build --scale boerse=1 --scale bank=4
 
 Workaround for following Error *Error response from daemon: driver failed programming external connectivity on endpoint vs-praktikum-bank-1 (19a4a9a43ed074d42706cf0a0f4ee6dc3a035b9713626b66b4d2149065a073b7): Bind for 0.0.0.0:22100 failed: port is already allocated*
 - open docker-compose.yml

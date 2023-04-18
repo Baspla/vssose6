@@ -2,6 +2,7 @@ import json
 import logging as log
 import os
 import socket
+import time
 
 #
 # Set up logging
@@ -67,7 +68,9 @@ class HTTPServer:
             client_socket, address = self.server_socket.accept()
             request = client_socket.recv(1024)
             try:
+                start_time = time.time()
                 response = self.handle_request(request)
+                log.debug("Request took "+ str(time.time() - start_time) + " seconds to process")
             except Exception as e:
                 log.error(e)
                 response = construct_http_response(500, "text/plain", "Internal Server Error")

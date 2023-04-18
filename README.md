@@ -24,7 +24,30 @@ P2:
 
 ### Bank
 
+- bank starts up
+- read csv file
+- connect to lookup, connect to Börse
+- starting threads for...
+ - listen to Börse for trades
+  - creates socket
+  - wait for and get messages from Börse
+ - print out portfolio value and stock values
+ - start user interface server for P2
+  - handle GET/POST requests (a lot of different APIs, e.g. deposit or withdraw)
+
 ### Boerse
+
+- Börse starts up
+- read stocks csv
+- gets server settings (IP, Port, etc.)
+- connect to lookup server
+- create datagram socket
+- starting threads for...
+ - listen for datagrams (saves connected clients, send trades/price changes to all connected clients)
+ - random price changes
+ - sends keep alive message to all connected clients
+ - sends keep alive message to lookup server
+ - print out current stock prices
 
 ### Lookup
 

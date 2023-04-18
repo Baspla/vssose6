@@ -241,7 +241,7 @@ def client_keepalive():
 # It runs in a separate thread
 #
 def print_prices():
-    while True:
+    while PRINT_PRICES:
         time.sleep(PRINT_PRICES_INTERVAL)
         log.info("##################\nCurrent prices\n##################")
         for i in range(len(value)):

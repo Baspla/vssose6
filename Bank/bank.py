@@ -89,7 +89,7 @@ class Bank:
     # This is done for validation purposes
     #
     def print_prices(self):
-        while True:
+        while PRINT_PRICES:
             time.sleep(PRINT_PRICES_INTERVAL)
             log.info("Portfolio value: {}".format(self.portfolio_value))
             log.info("##################\nCurrent prices\n##################")

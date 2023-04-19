@@ -5,8 +5,8 @@
 Generell:
 - open Docker Desktop
 - open terminal
- - cd to repo folder
- - docker-compose up --build --scale boerse=1 --scale bank=4
+ 	- cd to repo folder
+ 	- docker-compose up --build --scale boerse=1 --scale bank=4
 
 Workaround for following Error *Error response from daemon: driver failed programming external connectivity on endpoint vs-praktikum-bank-1 (19a4a9a43ed074d42706cf0a0f4ee6dc3a035b9713626b66b4d2149065a073b7): Bind for 0.0.0.0:22100 failed: port is already allocated*
 - open docker-compose.yml
@@ -24,7 +24,30 @@ P2:
 
 ### Bank
 
+- bank starts up
+- read csv file
+- connect to lookup, connect to Börse
+- starting threads for...
+ 	- listen to Börse for trades
+  	- creates socket
+  	- wait for and get messages from Börse
+ 	- print out portfolio value and stock values
+ 	- start user interface server for P2
+   		- handle GET/POST requests (a lot of different APIs, e.g. deposit or withdraw)
+
 ### Boerse
+
+- Börse starts up
+- read stocks csv
+- gets server settings (IP, Port, etc.)
+- connect to lookup server
+- create datagram socket
+- starting threads for...
+ 	- listen for datagrams (saves connected clients, send trades/price changes to all connected clients)
+  	- random price changes
+  	- sends keep alive message to all connected clients
+  	- sends keep alive message to lookup server
+  	- print out current stock prices
 
 ### Lookup
 

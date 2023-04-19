@@ -29,8 +29,8 @@ services:
       - PORT=22100
     build: ./Bank/
     ports:
-      - 22100:22100
-      #- 22100
+      # - 22100:22100
+      - 22100
       # use - 22100 for random port (this can be used to run multiple instances)
     depends_on:
       - lookup

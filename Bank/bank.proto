@@ -1,0 +1,24 @@
+// gRPC (bank to bank communication)
+
+// Methods:
+//  - lendMoney
+//  - transferMoney
+
+syntax = "proto3";
+
+package bank;
+
+message Request {
+  string bank = 1;
+  double amount = 3;
+}
+
+message Response {
+  string status = 1;
+  string reason = 2;
+}
+
+service BankService {
+  rpc lendMoney(Request) returns (Response) {}
+  rpc transferMoney(Request) returns (Response) {}
+}

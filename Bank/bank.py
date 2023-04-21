@@ -5,6 +5,8 @@ import csv
 import logging as log
 from bank_constants import *
 from user_interface import HTTPServer
+from grpc_server import serveGRPC
+import grpc_client
 
 from connect_to_boerse import listen_to_boerse
 from connect_to_lookup import load_boersen_server_from_lookup_server
@@ -141,6 +143,15 @@ class Bank:
         return True
 
 #
+# Test
+#
+
+def test():
+    # wait for 30 seconds
+    time.sleep(30)
+    grpc_client.run()
+
+#
 # Main
 #
 if __name__ == "__main__":
@@ -161,14 +172,17 @@ if __name__ == "__main__":
 
     log.info("Loaded {} stocks and amounts".format(len(amount)))
 
-    list_boersen_server = load_boersen_server_from_lookup_server()
+    bank = Bank(amount, value, START_FUNDS, START_LOANS)
+    uiServer = HTTPServer(bank)
 
+    """list_boersen_server = load_boersen_server_from_lookup_server()
     for boersen_server_id in list_boersen_server:
         boersen_server = list_boersen_server[boersen_server_id]
         ip = boersen_server["ip"]
         port = boersen_server["port"]
-        bank = Bank(amount, value, START_FUNDS, START_LOANS)
-        uiServer = HTTPServer(bank)
-        threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()
-        threading.Thread(target=bank.print_prices).start()
-        threading.Thread(target=uiServer.start).start()
+        threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()"""
+
+    threading.Thread(target=bank.print_prices).start()
+    threading.Thread(target=uiServer.start).start()
+    threading.Thread(target=serveGRPC).start()
+    threading.Thread(target=test).start()

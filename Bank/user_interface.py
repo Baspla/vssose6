@@ -188,6 +188,8 @@ class HTTPServer:
         else:
             return construct_http_response(404, "text/html", "Not Found")
 
+    # ToDo: weiterer Thread
+
     def handle_request(self, request):
         request = request.decode()
         request_lines = request.splitlines()

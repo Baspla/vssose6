@@ -15,32 +15,11 @@
 
 from __future__ import print_function
 import logging as log
-import os
 
 import grpc
-import bank_pb2
-import bank_pb2_grpc
 
-#
-# Set up logging
-#
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-log.basicConfig(
-    level=LOGLEVEL,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        log.FileHandler('debug.log'),
-        log.StreamHandler()
-    ]
-)
-
-def get_one_account(stub, account_number):
-    account = stub.GetAccount(bank_pb2.AccountRequest(account_number=account_number))
-    if not account:
-        print("Server returned incomplete account")
-        return
-
-    print("Account %d has balance %d" % (account_number, account.balance))
+from rpc import bank_pb2
+from rpc import bank_pb2_grpc
 
 def lendMoney(stub, amount):
     response = stub.lendMoney(bank_pb2.Request(bank="TEST",amount=amount))

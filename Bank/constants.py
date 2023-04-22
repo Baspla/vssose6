@@ -4,7 +4,7 @@
 PRINT_PRICES_INTERVAL = 45
 TIMEOUT = 30
 BUFFER_SIZE = 1024
-FILE_PATH = 'stocks_amounts.csv'
+FILE_PATH = 'static/stocks_amounts.csv'
 START_FUNDS = 100000
 START_LOANS = 0
 PRINT_PRICES = False

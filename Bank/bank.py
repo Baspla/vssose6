@@ -1,28 +1,7 @@
-import os
 import time
-import threading
-import csv
 import logging as log
-from bank_constants import *
-from user_interface import HTTPServer
-from grpc_server import serveGRPC
-import grpc_client
+from constants import *
 
-from connect_to_boerse import listen_to_boerse
-from connect_to_lookup import load_boersen_server_from_lookup_server
-
-#
-# Set up logging
-#
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-log.basicConfig(
-    level=LOGLEVEL,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        log.FileHandler('debug.log'),
-        log.StreamHandler()
-    ]
-)
 
 class Bank:
     def __init__(self, stock_amount, stock_value, funds, loans):
@@ -141,48 +120,3 @@ class Bank:
         self.stock_amount[stock] = self.stock_amount[stock] - amount
         self.update_portfolio_value()
         return True
-
-#
-# Test
-#
-
-def test():
-    # wait for 30 seconds
-    time.sleep(30)
-    grpc_client.run()
-
-#
-# Main
-#
-if __name__ == "__main__":
-    log.info("Starting bank server")
-
-    # Get initial stock data from csv
-    def read_csv_file(file_path):
-        amount = {}
-        value = {}
-        with open(file_path, mode='r') as file:
-            csv_reader = csv.DictReader(file)
-            for row in csv_reader:
-                amount[row['stock']] = float(row['amount'])
-                value[row['stock']] = 0
-        return amount, value
-
-    amount,value = read_csv_file(FILE_PATH)
-
-    log.info("Loaded {} stocks and amounts".format(len(amount)))
-
-    bank = Bank(amount, value, START_FUNDS, START_LOANS)
-    uiServer = HTTPServer(bank)
-
-    """list_boersen_server = load_boersen_server_from_lookup_server()
-    for boersen_server_id in list_boersen_server:
-        boersen_server = list_boersen_server[boersen_server_id]
-        ip = boersen_server["ip"]
-        port = boersen_server["port"]
-        threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()"""
-
-    threading.Thread(target=bank.print_prices).start()
-    threading.Thread(target=uiServer.start).start()
-    threading.Thread(target=serveGRPC).start()
-    threading.Thread(target=test).start()

@@ -15,24 +15,12 @@
 
 from concurrent import futures
 import logging as log
-import os
 
 import grpc
-import bank_pb2
-import bank_pb2_grpc
 
-#
-# Set up logging
-#
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-log.basicConfig(
-    level=LOGLEVEL,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        log.FileHandler('debug.log'),
-        log.StreamHandler()
-    ]
-)
+from rpc import bank_pb2_grpc
+from rpc import bank_pb2
+
 
 class BankServicer(bank_pb2_grpc.BankServiceServicer):
     def __init__(self, bank):
@@ -52,17 +40,17 @@ class BankServicer(bank_pb2_grpc.BankServiceServicer):
         return response
 
 
-def serveGRPC(bank):
-    log.debug("Setting up GRPC Server")
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    bank_pb2_grpc.add_BankServiceServicer_to_server(
-        BankServicer(bank), server)
-    server.add_insecure_port('[::]:50051')
-    server.start()
-    log.info("GRPC Server started")
-    server.wait_for_termination()
+class GRPCServer:
+    def __init__(self, bank):
+        self.bank = bank
 
-if __name__ == '__main__':
-    from bank import Bank
-    bank = Bank({},{},100000,0)
-    serveGRPC(bank)
+    def serve(self):
+        log.debug("Setting up GRPC Server")
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        bank_pb2_grpc.add_BankServiceServicer_to_server(
+            BankServicer(self.bank), server)
+        server.add_insecure_port('[::]:50051')
+        server.start()
+        log.info("GRPC Server started")
+        server.wait_for_termination()
+    

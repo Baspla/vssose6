@@ -5,31 +5,17 @@
 # It tries to find a boerse server in the lookup server
 # If it fails, it retries with exponential backoff
 #
-import os
 import socket
 import http.client
 import json
 import logging as log
 import time
 
-#
-# Set up logging
-#
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-log.basicConfig(
-    level=LOGLEVEL,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        log.FileHandler('debug.log'),
-        log.StreamHandler()
-    ]
-)
+from configuration import LOOKUP_HOST, LOOKUP_PORT
 
-def load_boersen_server_from_lookup_server():
+def load_boersen_server():
     
-    LOOKUP_HOST = os.environ.get("LOOKUP_HOST", "lookup")
     LOOKUP_IP = socket.gethostbyname(LOOKUP_HOST)
-    LOOKUP_PORT = os.environ.get("LOOKUP_PORT", 22000)
 
     headers = {
         "Content-Type": "application/json"
@@ -59,8 +45,7 @@ def load_boersen_server_from_lookup_server():
                 log.error(f"Failed to find boersen server with HTTP status code {response.status} {response.reason} and data {data}")
         except Exception as e:
             log.error(f"Error: {e}")
-        finally:
-            conn.close()
+            
         if run:
             # exponential backoff up to a maximum of 1 minute
             backoff = min(2 ** (attempt + 1), 60)

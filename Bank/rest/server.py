@@ -4,20 +4,6 @@ import os
 import socket
 import time
 
-#
-# Set up logging
-#
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-log.basicConfig(
-    level=LOGLEVEL,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        log.FileHandler('debug.log'),
-        log.StreamHandler()
-    ]
-)
-
-
 def construct_http_response(status_code, content_type, body):
     response = f"HTTP/1.1 {status_code}\nContent-Type: {content_type}\n\n{body}"
     return response.encode()
@@ -79,12 +65,12 @@ class HTTPServer:
 
     def handle_get_request(self, request_path):
         if request_path == "/kundenportal":
-            with open("kundenportal.html", "r") as f:
+            with open("static/kundenportal.html", "r") as f:
                 htmlData = f.read()
             return construct_http_response(200, "text/html", htmlData)
 
         elif request_path == "/mitarbeiterportal":
-            with open("mitarbeiterportal.html", "r") as f:
+            with open("static/mitarbeiterportal.html", "r") as f:
                 htmlData = f.read()
             return construct_http_response(200, "text/html", htmlData)
 

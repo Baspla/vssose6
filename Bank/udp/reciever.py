@@ -7,20 +7,7 @@ import socket
 import logging as log
 import time
 
-from bank_constants import *
-
-#
-# Set up logging
-#
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-log.basicConfig(
-    level=LOGLEVEL,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        log.FileHandler('debug.log'),
-        log.StreamHandler()
-    ]
-)
+from constants import *
 
 def send_message(clientsocket,message, address):
     bytesToSend = str.encode(message)

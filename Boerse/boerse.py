@@ -67,6 +67,7 @@ def register_lookup(ip,port):
     attempt = 0
     
     while run:
+        conn = None
         try:
             conn = http.client.HTTPConnection(LOOKUP_IP, LOOKUP_PORT)
             conn.request("POST", "/register", payload, headers)
@@ -82,7 +83,8 @@ def register_lookup(ip,port):
         except Exception as e:
             log.error(f"Error: {e}")
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         if run:
             # exponential backoff up to a maximum of 1 minute
             backoff = min(2 ** (attempt + 1), 60)
@@ -115,6 +117,7 @@ def lookup_keepalive(id, ip, port):
 
     while True:
         time.sleep(LOOKUP_KEEPALIVE_INTERVAL)
+        conn = None
         try:
             conn = http.client.HTTPConnection(LOOKUP_IP, LOOKUP_PORT)
             conn.request("POST", "/register", payload, headers)
@@ -131,7 +134,8 @@ def lookup_keepalive(id, ip, port):
         except Exception as e:
             log.error(f"Error: {e}")
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
 #
 # This method sends all current stock prices to the bank

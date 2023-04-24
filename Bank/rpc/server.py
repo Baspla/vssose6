@@ -17,6 +17,7 @@ from concurrent import futures
 import logging as log
 
 import grpc
+from configuration import GRPC_PORT
 
 from rpc import bank_pb2_grpc
 from rpc import bank_pb2
@@ -26,6 +27,7 @@ class BankServicer(bank_pb2_grpc.BankServiceServicer):
     def __init__(self, bank):
         self.bank = bank
     def lendMoney(self, request, context):
+        log.info("Received request to lend money")
         if self.bank.getLoan(request.amount):
             response = bank_pb2.Response(status="SUCCESS", reason="Money Lended")
         else:
@@ -33,7 +35,8 @@ class BankServicer(bank_pb2_grpc.BankServiceServicer):
         return response
     
     def transferMoney(self, request, context):
-        if self.bank.withdraw(request.amount):
+        log.info("Received request to transfer money")
+        if self.bank.deposit(request.amount):
             response = bank_pb2.Response(status="SUCCESS", reason="Money Sent")
         else:
             response = bank_pb2.Response(status="FAILED", reason="Money Not Sent")
@@ -49,8 +52,8 @@ class GRPCServer:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         bank_pb2_grpc.add_BankServiceServicer_to_server(
             BankServicer(self.bank), server)
-        server.add_insecure_port('[::]:50051')
+        server.add_insecure_port('[::]:'+str(GRPC_PORT))
         server.start()
-        log.info("GRPC Server started")
+        log.info("GRPC Server started on port: "+str(GRPC_PORT))
         server.wait_for_termination()
     

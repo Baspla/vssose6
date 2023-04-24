@@ -2,7 +2,10 @@ import json
 import logging as log
 import os
 import socket
+import threading
 import time
+
+from rpc.client import on_funds_low, test_transferMoney
 
 def construct_http_response(status_code, content_type, body):
     response = f"HTTP/1.1 {status_code}\nContent-Type: {content_type}\n\n{body}"
@@ -49,19 +52,23 @@ class HTTPServer:
 
         print(f'Server läuft auf http://{self.host}:{self.port}/')
 
+    def handle_client_request(self, client_socket):
+        request = client_socket.recv(1024)
+        try:
+            start_time = time.time()
+            response = self.handle_request(request)
+            log.debug("Request took "+ str(time.time() - start_time) + " seconds to process")
+        except Exception as e:
+            log.error(e)
+            response = construct_http_response(500, "text/plain", "Internal Server Error")
+        client_socket.sendall(response)
+        client_socket.close()
+
     def start(self):
         while True:
             client_socket, address = self.server_socket.accept()
-            request = client_socket.recv(1024)
-            try:
-                start_time = time.time()
-                response = self.handle_request(request)
-                log.debug("Request took "+ str(time.time() - start_time) + " seconds to process")
-            except Exception as e:
-                log.error(e)
-                response = construct_http_response(500, "text/plain", "Internal Server Error")
-            client_socket.sendall(response)
-            client_socket.close()
+            t = threading.Thread(target=self.handle_client_request, args=(client_socket,))
+            t.start()
 
     def handle_get_request(self, request_path):
         if request_path == "/kundenportal":
@@ -92,6 +99,14 @@ class HTTPServer:
         elif request_path == "/api/stockList":
             data = self.bank.getStockList()
             return construct_http_response_json(200, data)
+        elif request_path == "/trigger/transferMoney": # Function for testing the gRPC client
+            log.debug("Triggered gRPC transferMoney function")
+            data = {"success":test_transferMoney(self.bank)}
+            return construct_http_response_json(200, data)
+        elif request_path == "/trigger/fundsLow": # Function for testing the gRPC client
+            log.debug("Triggered on_funds_low")
+            data = {"success": on_funds_low(self.bank)}
+            return construct_http_response_json(200, data)
         else:
             return construct_http_response(404, "text/html", "Not Found")
 
@@ -100,7 +115,10 @@ class HTTPServer:
         if request_path == "/api/deposit":
             if "amount" not in request_json:
                 return construct_http_response(400, "text/html", "Bad Request")
-            amount = float(request_json["amount"])
+            try:
+                amount = float(request_json["amount"])
+            except ValueError:
+                return construct_http_response(400, "text/html", "Bad Request")
             if amount < 1:
                 return construct_http_response(400, "text/html", "Bad Request")
             self.bank.deposit(amount)
@@ -110,7 +128,10 @@ class HTTPServer:
         elif request_path == "/api/withdraw":
             if "amount" not in request_json:
                 return construct_http_response(400, "text/html", "Bad Request")
-            amount = float(request_json["amount"])
+            try:
+                amount = float(request_json["amount"])
+            except ValueError:
+                return construct_http_response(400, "text/html", "Bad Request")
             if amount < 1:
                 return construct_http_response(400, "text/html", "Bad Request")
             self.bank.withdraw(amount)
@@ -120,7 +141,10 @@ class HTTPServer:
         elif request_path == "/api/getLoan":
             if "amount" not in request_json:
                 return construct_http_response(400, "text/html", "Bad Request")
-            amount = float(request_json["amount"])
+            try:
+                amount = float(request_json["amount"])
+            except ValueError:
+                return construct_http_response(400, "text/html", "Bad Request")
             if amount < 1:
                 return construct_http_response(400, "text/html", "Bad Request")
             self.bank.getLoan(amount)
@@ -130,7 +154,10 @@ class HTTPServer:
         elif request_path == "/api/repayLoan":
             if "amount" not in request_json:
                 return construct_http_response(400, "text/html", "Bad Request")
-            amount = float(request_json["amount"])
+            try:
+                amount = float(request_json["amount"])
+            except ValueError:
+                return construct_http_response(400, "text/html", "Bad Request")
             if amount < 1:
                 return construct_http_response(400, "text/html", "Bad Request")
             self.bank.repayLoan(amount)
@@ -142,7 +169,10 @@ class HTTPServer:
                 return construct_http_response(400, "text/html", "Bad Request")
             if "name" not in request_json:
                 return construct_http_response(400, "text/html", "Bad Request")
-            amount = int(request_json["amount"])
+            try:
+                amount = float(request_json["amount"])
+            except ValueError:
+                return construct_http_response(400, "text/html", "Bad Request")
             if amount < 1:
                 return construct_http_response(400, "text/html", "Bad Request")
             name = request_json["name"]
@@ -157,7 +187,10 @@ class HTTPServer:
                 return construct_http_response(400, "text/html", "Bad Request")
             if "name" not in request_json:
                 return construct_http_response(400, "text/html", "Bad Request")
-            amount = int(request_json["amount"])
+            try:
+                amount = float(request_json["amount"])
+            except ValueError:
+                return construct_http_response(400, "text/html", "Bad Request")
             if amount < 1:
                 return construct_http_response(400, "text/html", "Bad Request")
             name = request_json["name"]
@@ -170,11 +203,8 @@ class HTTPServer:
             else:
                 data = {"message": "Not enough stocks"}
                 return construct_http_response_json(400, data)
-
         else:
             return construct_http_response(404, "text/html", "Not Found")
-
-    # ToDo: weiterer Thread
 
     def handle_request(self, request):
         request = request.decode()

@@ -16,7 +16,7 @@ services:
       - PORT=12345
       - LOOKUP_HOST=lookup
       - LOOKUP_PORT=22000
-      - LOGLEVEL=INFO
+      - LOGLEVEL=DEBUG
     build: ./Boerse/
     depends_on:
       - lookup
@@ -25,7 +25,7 @@ services:
     environment:
       - LOOKUP_HOST=lookup
       - LOOKUP_PORT=22000
-      - LOGLEVEL=DEBUG
+      - LOGLEVEL=INFO
       - PORT=22100
     build: ./Bank/
     ports:

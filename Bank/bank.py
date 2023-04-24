@@ -1,5 +1,6 @@
 import time
 import logging as log
+from rpc.client import on_funds_low
 from constants import *
 
 
@@ -96,18 +97,44 @@ class Bank:
 
     # P2 functions (deposit, withdraw, getLoan, repayLoan)
     def deposit(self, value):
+        if value < 0:
+            log.debug("Denying deposit request for negative value {}".format(value))
+            return False
         self.funds = self.funds + value
+        log.debug("Deposited {} to bank. New bank funds: {}".format(value, self.funds))
+        return True
     
     def withdraw(self, value):
+        if value < 0:
+            log.debug("Denying withdraw request for negative value {}".format(value))
+            return False
+        if value > self.funds:
+            log.debug("Denying withdraw request for value {} because bank has only {}".format(value, self.funds))
+            return False
         self.funds = self.funds - value
+        log.debug("Withdrew {} from bank. New bank funds: {}".format(value, self.funds))
+        return True
 
     def getLoan(self, value):
+        if value < 0:
+            log.debug("Denying loan request for negative value {}".format(value))
+            return False
+        if value > self.funds:
+            log.debug("Denying loan request for value {} because bank has only {}".format(value, self.funds))
+            return False
         self.funds = self.funds - value
         self.loans = self.loans + value
+        log.debug("Lent out {} of funds. New bank loans: {}".format(value, self.loans))
+        return True
         
     def repayLoan(self, value):
+        if value < 0:
+            log.debug("Denying repay request for negative value {}".format(value))
+            return False
         self.funds = self.funds + value
         self.loans = self.loans - value
+        log.debug("Repayed {} of loan. New bank loans: {}".format(value, self.loans))
+        return True
 
     # buying and selling stocks does not change global value of stocks
     def buyStock(self, stock, amount):
@@ -120,3 +147,15 @@ class Bank:
         self.stock_amount[stock] = self.stock_amount[stock] - amount
         self.update_portfolio_value()
         return True
+    
+    def financecheck(self):
+        while True:
+            time.sleep(FINANCECHECK_INTERVAL)
+            if self.funds < INSOLVENCY_THRESHOLD:                                       # If bank is insolvent
+                log.warning("Bank is insolvent. Trying to find a helping bank.")        # Print warning                
+                if on_funds_low(self) :                                                 # Call on_funds_low function to handle this If bank is still insolvent after handling
+                    log.info("Bank is no longer insolvent.")                            # Print warning
+                else:
+                    log.warning("Bank is insolvent. Could not find a helping bank.")
+        
+        

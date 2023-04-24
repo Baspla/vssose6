@@ -1,9 +1,11 @@
 import logging as log
+import socket
 import threading
 import csv
 import os
 import time
-from lookup.lookup import load_boersen_server
+from configuration import GRPC_PORT
+from lookup.lookup import load_boersen_server, lookup_keepalive, register_bank_at_lookup
 from rest.server import HTTPServer
 import rpc.client
 import rpc.server
@@ -51,6 +53,11 @@ if __name__ == "__main__":
     bank = Bank(amount, value, START_FUNDS, START_LOANS)
     uiServer = HTTPServer(bank)
     gRPCServer = rpc.server.GRPCServer(bank)
+    LOCAL_IP = socket.gethostbyname(socket.gethostname())
+
+    log.debug("Registering with lookup service")
+    id = register_bank_at_lookup(LOCAL_IP,GRPC_PORT)
+    log.info("Registered with lookup service with id {}".format(id))
 
     list_boersen_server = load_boersen_server()
     for boersen_server_id in list_boersen_server:
@@ -58,13 +65,19 @@ if __name__ == "__main__":
         ip = boersen_server["ip"]
         port = boersen_server["port"]
         threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()
-
+    
     pricesThread = threading.Thread(target=bank.print_prices)
     httpThread = threading.Thread(target=uiServer.start)
     grpcThread = threading.Thread(target=gRPCServer.serve)
+    keepaliveThread = threading.Thread(target=lookup_keepalive, args=(id,LOCAL_IP,GRPC_PORT))
+    financecheckThread = threading.Thread(target=bank.financecheck)
     pricesThread.start()
     httpThread.start()
     grpcThread.start()
+    keepaliveThread.start()
+    financecheckThread.start()
     grpcThread.join()
     httpThread.join()
     pricesThread.join()
+    keepaliveThread.join()
+    financecheckThread.join()

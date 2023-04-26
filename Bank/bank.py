@@ -91,6 +91,9 @@ class Bank:
     def getTotalFunds(self):
         return self.funds
 
+    def getValues(self):
+        return SERVER_ID+":"+str(self.getTotalFunds())
+
     # How much all stocks are worth + cash
     def getTotalValue(self):
         return self.funds + self.portfolio_value

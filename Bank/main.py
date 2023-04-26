@@ -66,22 +66,24 @@ if __name__ == "__main__":
         ip = boersen_server["ip"]
         port = boersen_server["port"]
         threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()
-    
-    mqttClient = mqttClient()
-    mqttClient.start()
+
+    mqttClient = mqttClient(bank)
 
     pricesThread = threading.Thread(target=bank.print_prices)
     httpThread = threading.Thread(target=uiServer.start)
     grpcThread = threading.Thread(target=gRPCServer.serve)
     keepaliveThread = threading.Thread(target=lookup_keepalive, args=(id,LOCAL_IP,GRPC_PORT))
     financecheckThread = threading.Thread(target=bank.financecheck)
+    publishValuesThread = threading.Thread(target=mqttClient.publishValues)
     pricesThread.start()
     httpThread.start()
     grpcThread.start()
     keepaliveThread.start()
     financecheckThread.start()
+    publishValuesThread.start()
     grpcThread.join()
     httpThread.join()
     pricesThread.join()
     keepaliveThread.join()
     financecheckThread.join()
+    publishValuesThread.join()

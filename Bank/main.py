@@ -12,6 +12,7 @@ import rpc.server
 from constants import *
 from bank import Bank
 from udp.reciever import listen_to_boerse
+from mqtt.mqttClient import mqttClient
 
 #
 # Set up logging
@@ -66,6 +67,9 @@ if __name__ == "__main__":
         port = boersen_server["port"]
         threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()
     
+    mqttClient = mqttClient()
+    mqttClient.start()
+
     pricesThread = threading.Thread(target=bank.print_prices)
     httpThread = threading.Thread(target=uiServer.start)
     grpcThread = threading.Thread(target=gRPCServer.serve)

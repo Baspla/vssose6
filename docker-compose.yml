@@ -37,3 +37,8 @@ services:
       - lookup
       - boerse
     restart: unless-stopped
+  mosquitto:
+    container_name: "mosquitto"
+    image: "eclipse-mosquitto:2.0.15"
+    volumes:
+      - "./mosquitto.conf:/mosquitto/config/mosquitto.conf"

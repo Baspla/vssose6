@@ -2,8 +2,6 @@ import paho.mqtt.client as mqtt
 import time
 from random import randrange, uniform
 
-from bank import Bank
-
 def on_message(client, userdata, message):
     print("Received message: ", str(message.payload.decode("utf-8")))
 

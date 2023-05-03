@@ -86,13 +86,13 @@ class mqttClient:
             self.client.publish("VALUES", values)
             log.info("Published values {}".format(values))
 
-            if self.checkInsolvency(values):
-                log.info("Bank is insolvent")
+            #if self.checkInsolvency(values):
+                #log.info("Bank is insolvent")
                 # Überprüfen ob bereits ein Rettungsplan diskutiert wird
                 # Rettungsplan erstellen
                     # Jede Bank mit funds > 60.000 gibt 10% ihres Geldes ab
                 # Rettungsplan veröffentlichen
-                self.client.publish("RESCUE_PROPOSAL", mqtt.Client(SERVER_ID))
+                #self.client.publish("RESCUE_PROPOSAL", mqtt.Client(SERVER_ID))
                 
             time.sleep(PUBLISH_VALUES_INTERVAL)
             

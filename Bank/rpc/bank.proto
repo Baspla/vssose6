@@ -12,7 +12,7 @@ message Request {
   string bank = 1;
   double amount = 3;
 }
-
+// kein String
 message Response {
   string status = 1;
   string reason = 2;

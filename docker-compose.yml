@@ -37,6 +37,7 @@ services:
       - lookup
       - boerse
     restart: unless-stopped
+  # MQTT Broker
   mosquitto:
     container_name: "mosquitto"
     image: "eclipse-mosquitto:2.0.15"

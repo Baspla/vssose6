@@ -15,6 +15,8 @@ class Bank:
         self.funds = funds
         # How much money the bank has lent out
         self.loans = loans
+        # locking bank transactions during mqtt rescue
+        self.locked=False
     
     #
     # Process Börsen Changes
@@ -100,6 +102,9 @@ class Bank:
 
     # P2 functions (deposit, withdraw, getLoan, repayLoan)
     def deposit(self, value):
+        if self.locked:
+            log.debug("Bank is locked. Denying deposit request for value {}".format(value))
+            return False
         if value < 0:
             log.debug("Denying deposit request for negative value {}".format(value))
             return False
@@ -108,6 +113,9 @@ class Bank:
         return True
     
     def withdraw(self, value):
+        if self.locked:
+            log.debug("Bank is locked. Denying withdraw request for value {}".format(value))
+            return False
         if value < 0:
             log.debug("Denying withdraw request for negative value {}".format(value))
             return False
@@ -119,6 +127,9 @@ class Bank:
         return True
 
     def getLoan(self, value):
+        if self.locked:
+            log.debug("Bank is locked. Denying loan request for value {}".format(value))
+            return False
         if value < 0:
             log.debug("Denying loan request for negative value {}".format(value))
             return False
@@ -131,6 +142,9 @@ class Bank:
         return True
         
     def repayLoan(self, value):
+        if self.locked:
+            log.debug("Bank is locked. Denying repay request for value {}".format(value))
+            return False
         if value < 0:
             log.debug("Denying repay request for negative value {}".format(value))
             return False
@@ -138,6 +152,9 @@ class Bank:
         self.loans = self.loans - value
         log.debug("Repayed {} of loan. New bank loans: {}".format(value, self.loans))
         return True
+
+    def lock(self,locked):
+        self.locked = locked
 
     # buying and selling stocks does not change global value of stocks
     def buyStock(self, stock, amount):

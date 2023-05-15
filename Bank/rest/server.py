@@ -50,7 +50,7 @@ class HTTPServer:
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(self.backlog)
 
-        print(f'Server läuft auf http://{self.host}:{self.port}/')
+        log.info(f'Server läuft auf http://{self.host}:{self.port}/')
 
     def handle_client_request(self, client_socket):
         request = client_socket.recv(1024)
@@ -65,12 +65,14 @@ class HTTPServer:
         client_socket.close()
 
     def start(self):
+        log.info("Started listening for http requests")
         while True:
             client_socket, address = self.server_socket.accept()
             t = threading.Thread(target=self.handle_client_request, args=(client_socket,))
             t.start()
 
     def handle_get_request(self, request_path):
+        log.debug("Handling GET request for path: " + request_path)
         if request_path == "/kundenportal":
             with open("static/kundenportal.html", "r") as f:
                 htmlData = f.read()

@@ -27,21 +27,31 @@ from constants import SERVER_ID, PUBLISH_VALUES_INTERVAL, INSOLVENCY_LENDING_AMO
 class mqttClient:
     def __init__(self,bank):
         log.info("Initialized MQTT Client")
-        mqttBroker = "mosquitto"
+        self.mqttBroker = "mosquitto"
         self.bank = bank
         self.funds_banken = {}
         self.last_update = {}
         self.current_proposal = None
         self.controlled_proposal = None
-        self.recieved_agreements = {}
+        self.received_agreements = {}
         self.client = mqtt.Client(SERVER_ID)
-        self.client.connect(mqttBroker,8883)
-        self.start()
+
 
     def start(self):
         log.info("Starting MQTT Client")
+        try:
+            self.client.connect(self.mqttBroker, 8883)
+        except Exception as e:
+            log.error("Error connecting to MQTT broker: {}".format(e))
+            return
         self.client.loop_start()
         self.client.subscribe("VALUES")
+        self.client.subscribe("RESCUE_PROPOSAL")
+        self.client.subscribe("RESCUE_PROPOSAL_ACCEPTED")
+        self.client.subscribe("RESCUE_PROPOSAL_DECLINED")
+        self.client.subscribe("RESCUE_PROPOSAL_FINISHED")
+
+
         self.client.on_message = self.on_message
 
     def publishValues(self):
@@ -50,11 +60,14 @@ class mqttClient:
             self.client.publish("VALUES", values)
             log.info("Published values {}".format(values))
 
-            if self.checkInsolvency(values):
+            if self.checkInsolvency(self.bank.getTotalFunds()):
                 log.info("Bank is insolvent")
                 # Überprüfen ob bereits ein Rettungsplan diskutiert wird
                 if self.current_proposal is not None:
                     log.info("Already discussing a proposal")
+                    return
+                if self.controlled_proposal is not None:
+                    log.info("Already controlling a proposal")
                     return
 
                 # Rettungsplan erstellen
@@ -64,16 +77,16 @@ class mqttClient:
                         continue
                     if self.funds_banken[bank_id] > 60000: # Jede Bank mit funds > 60.000 gibt 10% ihres Geldes ab
                         loans[bank_id] = 0.1 * self.funds_banken[bank_id]
-                        self.recieved_agreements[bank_id] = False
-                proposal = {"proposal_id": uuid.uuid4(), "to_be_rescued": SERVER_ID, "loans": loans}
+                        self.received_agreements[bank_id] = False
+                proposal = {"proposal_id": uuid.uuid4().__str__(), "to_be_rescued": SERVER_ID, "loans": loans}
                 self.controlled_proposal = proposal
-                self.current_proposal = proposal
                 self.client.publish("RESCUE_PROPOSAL", json.dumps(proposal)) # Rettungsplan veröffentlichen
                 
             time.sleep(PUBLISH_VALUES_INTERVAL)
             
     # check if bank is insolvent
     def checkInsolvency(self, values):
+        log.info("Checking insolvency "+str(values)+" "+str(INSOLVENCY_LENDING_AMOUNT_MQTT)+" "+str(values < INSOLVENCY_LENDING_AMOUNT_MQTT))
         if values < INSOLVENCY_LENDING_AMOUNT_MQTT:
             return True
         return False
@@ -82,7 +95,7 @@ class mqttClient:
         self.client.loop_stop()
 
     def on_message(self,client, userdata, message):
-        log.info("Received message: {}".format(str(message.payload.decode("utf-8"))))
+        log.warn("Received message in topic {}: {}".format(message.topic, message.payload.decode("utf-8")))
         # Buchführung wie viel Geld jede Bank hat
         msg = str(message.payload.decode("utf-8"))
         if message.topic == "VALUES":
@@ -91,9 +104,9 @@ class mqttClient:
                 log.error("Received message is not in format 'bank_id:amount'")
                 return
             bank_id = msg.split(":")[0]
-            self.funds_banken[bank_id] = msg.split(":")[1]
+            self.funds_banken[bank_id] = int(float(msg.split(":")[1]))
             self.last_update[bank_id] = time.time()
-            log.info("Updated funds_banken for bank {}".format(bank_id))
+            log.debug("Updated funds_banken for bank {}".format(bank_id))
         elif message.topic == "RESCUE_PROPOSAL":
             json_msg = json.loads(msg)
             # Falls bereits ein Rettungsplan existiert, ablehnen
@@ -107,7 +120,7 @@ class mqttClient:
                 return
 
             # Rettungsplan auswerten
-            current_proposal = json_msg
+            self.current_proposal = json_msg
             self.bank.lock(True)
             log.info("Received rescue proposal: {}".format(json_msg))
 
@@ -116,16 +129,13 @@ class mqttClient:
             else:
                 loans = json_msg["loans"]
                 accepted = True
-                if self.bank.getFunds() < loans[SERVER_ID]:            # In dieser Implementierung wird nur abgelehnt, wenn mehr Funds benötigt werden als vorhanden sind
+                if self.bank.getTotalFunds() < loans[SERVER_ID]:            # In dieser Implementierung wird nur abgelehnt, wenn mehr Funds benötigt werden als vorhanden sind
                     accepted = False
                 if accepted:
                     client.publish("RESCUE_PROPOSAL_ACCEPTED", json.dumps({"proposal_id": json_msg["proposal_id"],"sender": SERVER_ID})) # Wenn einverstanden zustimmung senden
                 else:
                     client.publish("RESCUE_PROPOSAL_DECLINED", json.dumps({"proposal_id": json_msg["proposal_id"],"sender": SERVER_ID})) # Wenn nicht einverstanden ablehnen
-
-
-            
-            pass
+            return
         elif message.topic == "RESCUE_PROPOSAL_DECLINED":
             # Falls wir der Koordinator sind und eine Bank ablehnt
             # Rettungsplan verwerfen und über RESCUE_PROPOSAL_FINISHED alle Banken informieren
@@ -146,9 +156,9 @@ class mqttClient:
             
             # Rettungsplan verwerfen
             self.controlled_proposal = None
-            self.current_proposal = None
+            log.info("Proposal {} declined, therefor sending FINISHED".format(json_msg["proposal_id"]))
             client.publish("RESCUE_PROPOSAL_FINISHED", json.dumps({"proposal_id": json_msg["proposal_id"], "success": False}))
-            pass
+            return
         elif message.topic == "RESCUE_PROPOSAL_ACCEPTED":
             # Falls wir der Koordinator sind und eine Bank zustimmt
             # Nachsehen, ob alle Banken zugestimmt haben
@@ -168,21 +178,29 @@ class mqttClient:
                 log.info("Received acceptance but proposal id does not match")
                 return
             
-            if self.recieved_agreements[json_msg["sender"]]:
+            if not json_msg["sender"] in self.received_agreements:
+                if json_msg["sender"] == SERVER_ID:
+                    log.info("Received acceptance from myself")
+                    return
+                log.info(f"Received acceptance but sender %s is not in received_agreements", json_msg["sender"])
+                return
+
+            if self.received_agreements[json_msg["sender"]]:
                 log.info("Received acceptance but already have one from this sender")
                 return
-            pass
 
             if json_msg["sender"] == SERVER_ID:
                 log.info("Received acceptance from myself")
                 return
             
-            self.recieved_agreements[json_msg["sender"]] = True
+            self.received_agreements[json_msg["sender"]] = True
 
-            if all(self.recieved_agreements.values()):
+            if all(self.received_agreements.values()):
+                log.info("All banks have accepted, therefor sending FINISHED")
                 client.publish("RESCUE_PROPOSAL_FINISHED", json.dumps({"proposal_id": json_msg["proposal_id"], "success": True}))
             else:
-                log.info("Received acceptance but not all banks have accepted")
+                log.info("Received acceptance from %s, waiting for others", json_msg["sender"])
+            return
         elif message.topic == "RESCUE_PROPOSAL_FINISHED":
             # Überprüfen ob erfolgreich oder nicht
             # Falls erfolgreich, Rettungsplan durchführen
@@ -222,11 +240,10 @@ class mqttClient:
                     log.info("Rescue plan executed")
             else:
                 log.info("Proposal finished unsuccessfully")
-                pass
+                self.bank.lock(False)
 
             # Transaktionen wieder freigeben
             self.current_proposal = None
             self.controlled_proposal = None
-            self.recieved_agreements = {}
-
-            pass
+            self.received_agreements = {}
+            return

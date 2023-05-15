@@ -68,6 +68,7 @@ if __name__ == "__main__":
         threading.Thread(target=listen_to_boerse, args=(bank,ip,port)).start()
 
     mqttClient = mqttClient(bank)
+    mqttClient.start()
 
     pricesThread = threading.Thread(target=bank.print_prices)
     httpThread = threading.Thread(target=uiServer.start)

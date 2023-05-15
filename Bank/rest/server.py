@@ -50,7 +50,7 @@ class HTTPServer:
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(self.backlog)
 
-        log.info(f'Server läuft auf http://{self.host}:{self.port}/')
+        log.info(f'HTTP Server running on http://{self.host}:{self.port}/')
 
     def handle_client_request(self, client_socket):
         request = client_socket.recv(1024)
@@ -73,6 +73,10 @@ class HTTPServer:
 
     def handle_get_request(self, request_path):
         log.debug("Handling GET request for path: " + request_path)
+        if request_path == "/":
+            with open("static/index.html", "r") as f:
+                htmlData = f.read()
+            return construct_http_response(200, "text/html", htmlData)
         if request_path == "/kundenportal":
             with open("static/kundenportal.html", "r") as f:
                 htmlData = f.read()

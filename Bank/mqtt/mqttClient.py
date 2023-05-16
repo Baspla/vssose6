@@ -96,7 +96,7 @@ class mqttClient:
         self.client.loop_stop()
 
     def on_message(self,client, userdata, message):
-        log.warn("Received message in topic {}: {}".format(message.topic, message.payload.decode("utf-8")))
+        log.debug("Received message in topic {}: {}".format(message.topic, message.payload.decode("utf-8")))
         # Buchführung wie viel Geld jede Bank hat
         msg = str(message.payload.decode("utf-8"))
         if message.topic == "VALUES":

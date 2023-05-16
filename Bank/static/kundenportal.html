@@ -12,12 +12,28 @@
             background-color: #000000;
             color: white;
             padding: 0.5rem;
+            padding-left: 1rem;
+            margin-left: 1rem;
+            margin-right: 1rem;
+            border-radius: 10px;
         }
 
         main {
-            padding: 0.5rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
             display: flex;
             justify-content: space-between;
+        }
+
+        article {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            font-size: 1.4rem;
+        }
+
+        a {
+            color: hsl(270, 50%, 60%);
+            text-decoration: none;
         }
 
         aside {
@@ -36,16 +52,20 @@
     <header>
         <h1>Kundenportal</h1>
     </header>
-    <h2>Ein-/Auszahlung</h2>
-    <input id="input-betrag" step="0.01" type="number">
-    <button id="button-einzahlung" type="button">Geld einzahlen</button>
-    <button id="button-auszahlung" type="button">Geld auszahlen</button>
-
-    <h2>Kredit</h2>
-    <input id="input-kredit-betrag" step="0.01" type="number">
-    <button id="button-kredit-aufnehmen" type="button">Kredit aufnehmen</button>
-    <button id="button-kredit-zahlen" type="button">Kredit zurückzahlen</button>
-    
+    <main>
+        <article>
+            <h2>Ein-/Auszahlung</h2>
+            <input id="input-betrag" step="0.01" type="number">
+            <button id="button-einzahlung" type="button">Geld einzahlen</button>
+            <button id="button-auszahlung" type="button">Geld auszahlen</button>
+        </article>
+        <article>
+            <h2>Kredit</h2>
+            <input id="input-kredit-betrag" step="0.01" type="number">
+            <button id="button-kredit-aufnehmen" type="button">Kredit aufnehmen</button>
+            <button id="button-kredit-zahlen" type="button">Kredit zurückzahlen</button>
+        </article>
+    </main>
     <script>
         console.log('JavaScript loaded');
         

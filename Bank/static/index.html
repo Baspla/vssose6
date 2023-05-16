@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="utf-8">
     <title>Bank</title>
@@ -12,12 +13,28 @@
             background-color: #000000;
             color: white;
             padding: 0.5rem;
+            padding-left: 1rem;
+            margin-left: 1rem;
+            margin-right: 1rem;
+            border-radius: 10px;
         }
 
         main {
-            padding: 0.5rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
             display: flex;
             justify-content: space-between;
+        }
+
+        article {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            font-size: 1.4rem;
+        }
+
+        a {
+            color: hsl(270, 50%, 60%);
+            text-decoration: none;
         }
 
         aside {
@@ -32,13 +49,30 @@
         }
     </style>
 </head>
+
 <body>
     <header>
         <h1>Bank</h1>
     </header>
-    <h2><a href="kundenportal">Kundenportal</a></h2>
-    
-    <h2><a href="mitarbeiterportal">Mitarbeiterportal</a></h2>
-    
+    <main>
+        <article>
+            <h2>
+                <a href="kundenportal">Kundenportal</a>
+            </h2>
+            <p>
+                Im Kundenportal kann man Geld ein/auszahlen oder Kredite beantragen/zurückzahlen.
+            </p>
+        </article>
+        <article>
+            <h2>
+                <a href="mitarbeiterportal">Mitarbeiterportal</a>
+            </h2>
+            <p>
+                Im Mitarbeiterportal kann man Wertpapiere kaufen/verkaufen oder die Gelder und Aktien der Bank einsehen.
+            </p>
+        </article>
+    </main>
+
 </body>
+
 </html>

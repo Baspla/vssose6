@@ -77,6 +77,7 @@ class mqttClient:
                         continue
                     if self.funds_banken[bank_id] > 60000: # Jede Bank mit funds > 60.000 gibt 10% ihres Geldes ab
                         loans[bank_id] = 0.1 * self.funds_banken[bank_id]
+                        log.info("Bank " + bank_id + " sends " + str(loans[bank_id]) + " to bank " + SERVER_ID)
                         self.received_agreements[bank_id] = False
                 proposal = {"proposal_id": uuid.uuid4().__str__(), "to_be_rescued": SERVER_ID, "loans": loans}
                 self.controlled_proposal = proposal
@@ -86,7 +87,7 @@ class mqttClient:
             
     # check if bank is insolvent
     def checkInsolvency(self, values):
-        log.info("Checking insolvency "+str(values)+" "+str(INSOLVENCY_LENDING_AMOUNT_MQTT)+" "+str(values < INSOLVENCY_LENDING_AMOUNT_MQTT))
+        log.info("Checking insolvency: Funds: "+str(values)+" insolvency limit: "+str(INSOLVENCY_LENDING_AMOUNT_MQTT)+" overstep limit: "+str(values < INSOLVENCY_LENDING_AMOUNT_MQTT))
         if values < INSOLVENCY_LENDING_AMOUNT_MQTT:
             return True
         return False

@@ -52,6 +52,8 @@ class HTTPServer:
 
         log.info(f'HTTP Server running on http://{self.host}:{self.port}/')
 
+    # get client request
+    # call handle_request
     def handle_client_request(self, client_socket):
         request = client_socket.recv(1024)
         try:
@@ -64,6 +66,9 @@ class HTTPServer:
         client_socket.sendall(response)
         client_socket.close()
 
+    # start http server
+    # listen for requests
+    # start thread for each request
     def start(self):
         log.info("Started listening for http requests")
         while True:
@@ -212,6 +217,9 @@ class HTTPServer:
         else:
             return construct_http_response(404, "text/html", "Not Found")
 
+
+    # handle request
+    # check if GET or POST
     def handle_request(self, request):
         request = request.decode()
         request_lines = request.splitlines()

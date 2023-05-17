@@ -123,6 +123,7 @@ class HTTPServer:
             return construct_http_response(404, "text/html", "Not Found")
 
     def handle_post_request(self, request_path, request_lines):
+        # -1: last element in request_lines list of requests
         request_json = json.loads(request_lines[-1])
         if request_path == "/api/deposit":
             if "amount" not in request_json:

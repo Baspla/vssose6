@@ -43,6 +43,7 @@ class HTTPServer:
         self.host = ''
         self.port = int(os.environ.get("PORT", 12340))
         self.backlog = 5
+        # Create a TCP socket (AF_INET is IPv4, SOCK_STREAM is TCP)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Makes sure that the port is available again after the server is shut down
         self.server_socket.setsockopt(

@@ -35,6 +35,7 @@ class mqttClient:
         self.controlled_proposal = None
         self.received_agreements = {}
         self.client = mqtt.Client(SERVER_ID)
+        self.times_declined = 0
 
 
     def start(self):
@@ -68,10 +69,20 @@ class mqttClient:
                     return
                 if self.controlled_proposal is not None:
                     log.info("Already controlling a proposal")
+                    self.times_declined += 1
+                    if self.times_declined > 10:
+                        log.info("Declined too often, stopping proposal")
+                        self.times_declined = 0
+                        self.client.publish("RESCUE_PROPOSAL_FINISHED", json.dumps({"proposal_id": self.controlled_proposal["proposal_id"], "success": False}))
+                        self.controlled_proposal = None
                     return
-
+                # abbrechen falls es keine anderen banken gibt
+                if self.funds_banken == {} or (len(self.funds_banken) == 1 and list(self.funds_banken.keys())[0] == SERVER_ID):
+                    log.info("No other banks available")
+                    return
                 # Rettungsplan erstellen
                 loans = {}
+                self.times_declined = 0
                 for bank_id in self.funds_banken:
                     if bank_id == SERVER_ID: # Wir retten uns nicht selbst
                         continue
